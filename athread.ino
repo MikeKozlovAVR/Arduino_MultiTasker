@@ -21,18 +21,19 @@ void cli_task(Task *task){
   task->yield();
 }
 
-void process_0(Cli *cli){
-  mtasker.newTask(task_func1, 15);
-  mtasker.newTask(task_func2, 62);
+void process_0(CliProcess *cli){
+  cli->setMultiTasker(&mtasker);
+  cli->regTaskPid(mtasker.newTask(task_func1, 15));
+  cli->regTaskPid(mtasker.newTask(task_func2, 62));
 }
 
-void process_1(Cli *cli){
+void process_1(CliProcess *cli){
   Serial.print("Process load: ");
   Serial.print(mtasker.getCpuLoad());
   Serial.println("%");
 }
 
-void process_2(Cli *cli){
+void process_2(CliProcess *cli){
   Serial.print("Active Tasks: ");
   Serial.println(mtasker.getActiveTaskNum());
 }
@@ -61,9 +62,9 @@ void task_func0(Task *task){
 }
 
 void task_func1(Task *task){
-  //Serial.println(task->getPid());
+  Serial.println(task->getPid());
   //delay(50);
-  task->sleep(100);
+  task->sleep(1000);
   /*tsk_count1++;
   if (tsk_count1 == 5){
     tsk_count1 = 0;
@@ -73,9 +74,9 @@ void task_func1(Task *task){
 
 void task_func2(Task *task){
   //delay(50);
-  //Serial.println(task->getPid());
+  Serial.println(task->getPid());
   //mtasker.destroyTaskAtPid(104);
-  task->sleep(200);
+  task->sleep(2000);
   //task->yield();
   /*
   tsk_count2++;

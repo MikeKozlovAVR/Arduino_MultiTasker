@@ -3,8 +3,9 @@
 
 #include <Arduino.h>
 #include <stdint.h>
+#include "cli_process.h"
 
-#define CLI_MAX_BUFF_SIZE 256
+#define CLI_MAX_BUFF_SIZE 32
 #define CLI_MAX_PROCESSES 12
 
 typedef struct _inbuff{
@@ -12,24 +13,24 @@ typedef struct _inbuff{
     uint16_t in_count;
 }inbuff_t;
 
-class Cli;
-
 typedef struct _process_unit{
     const char* name;
-    void(*process_f)(Cli *cli);
+    void(*process_f)(CliProcess *cli);
     uint8_t used;
+    CliProcess *cli;
 }process_unit_t;
 
 class Cli{
   public:
     Cli();
     void init(HardwareSerial *serial, unsigned long baud);
-    int  regProcess(void(*process_f)(Cli *cli), const char* name);
+    int  regProcess(void(*process_f)(CliProcess *cli), const char* name);
     void cliSerialEvent();
   private:
     int input(char in);
     int inputProcessing();
-    int startProcess();
+    int startProcess(char *proc_name);
+    int slayProcess(char *proc_name);
     void echo();
   public:
     
