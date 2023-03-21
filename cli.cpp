@@ -1,6 +1,8 @@
 #include "cli.h"
 
-
+namespace cli{
+static char cli_noti[] = "CLI: ";
+}
 
 Cli::Cli(){
 
@@ -16,14 +18,12 @@ int Cli::input(char in){
     if (in == '\n'){
         this->inbuff.buff[this->inbuff.in_count] = '\0';
         this->inputProcessing();
-        memset(this->inbuff.buff, 0, sizeof(this->inbuff.buff));
-        this->inbuff.in_count = 0;
+        this->clearInputBuffer();
         return 0;
     }
     this->inbuff.in_count++;
     if (this->inbuff.in_count >= CLI_MAX_BUFF_SIZE){
-        memset(this->inbuff.buff, 0, sizeof(this->inbuff.buff));
-        this->inbuff.in_count = 0;
+        this->clearInputBuffer();
     }
     return 0;
 }
@@ -39,7 +39,6 @@ void Cli::echo(){
 }
 
 int Cli::inputProcessing(){
-    //this->echo();
     char cmd_buf[CLI_MAX_BUFF_SIZE] = {0};
     char arg_buf[CLI_MAX_BUFF_SIZE] = {0};
     int command_div = 0;
@@ -54,9 +53,10 @@ int Cli::inputProcessing(){
         memcpy(arg_buf, this->inbuff.buff + command_div + 1, this->inbuff.in_count - command_div - 1);
         if (strcmp(cmd_buf, "slay") == 0){
             if (this->slayProcess(arg_buf) != 0){
-                this->serial->print("CLI slay: Process [");
+                this->serial->print(cli::cli_noti);
+                this->serial->print("slay: [");
                 this->serial->print(arg_buf);
-                this->serial->println("] not found");
+                this->serial->println("] not running");
             }
         }
         else {
@@ -70,13 +70,14 @@ int Cli::inputProcessing(){
     return 0;
 }
 
-int Cli::regProcess(void(*process_f)(CliProcess *cli), const char* name){
+int Cli::regProcess(void(*process_f)(CliProcess *process), const char* name, process_type_t type = PROCT_CONTINUOUS){
     for(int i = 0; i<CLI_MAX_PROCESSES; i++){
         if (!this->process_units[i].used){
             this->process_units[i].process_f = process_f;
             this->process_units[i].name = name;
+            this->process_units[i].type = type;
             this->process_units[i].used = 1;
-            this->process_units[i].cli = new CliProcess();
+            this->process_units[i].cli_proc = new CliProcess();
             return 0;
         }
     }
@@ -84,32 +85,44 @@ int Cli::regProcess(void(*process_f)(CliProcess *cli), const char* name){
 }
 
 int Cli::startProcess(char *proc_name){
+    this->serial->print(cli::cli_noti);
     for(int i = 0; i<CLI_MAX_PROCESSES; i++){
         if (this->process_units[i].used){
             if (strcmp(this->process_units[i].name, proc_name) == 0){
-                this->serial->print("CLI: Process [");
-                this->serial->print(proc_name);
-                this->serial->println("] starting..");
-                this->process_units[i].process_f(this->process_units[i].cli);
+                if (!this->process_units[i].runned){
+                    this->serial->print(proc_name);
+                    this->serial->println(" run");
+                    this->startProcess(&this->process_units[i]);
+                    if (this->process_units[i].type == PROCT_SINGLE){
+                        this->slayProcess(&this->process_units[i]);
+                    }
+                } else{
+                    this->serial->print("error:[");
+                    this->serial->print(proc_name);
+                    this->serial->println("] already launched");
+                }
                 return 0;
             }
         }
     }
-    this->serial->print("CLI: Process [");
+    this->serial->print("Process [");
     this->serial->print(proc_name);
     this->serial->println("] not found");
     return -1;
 }
 
+void Cli::startProcess(process_unit_t *proc_unit){
+    proc_unit->runned = 1;
+    proc_unit->process_f(proc_unit->cli_proc);
+}
+
 int Cli::slayProcess(char *proc_name){
     for(int i = 0; i<CLI_MAX_PROCESSES; i++){
-        if (this->process_units[i].used){
+        if (this->process_units[i].used && this->process_units[i].runned){
             if (strcmp(this->process_units[i].name, proc_name) == 0){
-                this->process_units[i].cli->destroyRegisteredTasks();
-                //delete(this->process_units[i].cli);
-                //this->process_units[i].process_f = NULL;
-                //this->process_units[i].used = 0;
-                this->serial->print("CLI: Process [");
+                this->slayProcess(&this->process_units[i]);
+                this->serial->print(cli::cli_noti);
+                this->serial->print("Process [");
                 this->serial->print(proc_name);
                 this->serial->println("] destroyed");
                 return 0;
@@ -117,5 +130,70 @@ int Cli::slayProcess(char *proc_name){
         }
     }
     return -1;
+}
+
+void Cli::slayProcess(process_unit_t *proc_unit){
+    proc_unit->runned = 0;
+    proc_unit->cli_proc->destroyRegisteredTasks();
+}
+
+void Cli::clearInputBuffer(){
+    memset(this->inbuff.buff, 0, sizeof(this->inbuff.buff));
+    this->inbuff.in_count = 0;
+}
+
+size_t Cli::out(char* src){
+    return this->serial->print(src);
+}
+
+size_t Cli::out(int src){
+    return this->serial->print(src);
+}
+
+size_t Cli::out(float src){
+    return this->serial->print(src);
+}
+
+size_t Cli::out(float src, uint8_t dec_places){
+    return this->serial->print(src, dec_places);
+}
+
+int Cli::in(char* str, size_t size){
+    if (size > CLI_MAX_BUFF_SIZE){
+        this->serial->print(cli::cli_noti);
+        this->serial->println("cmd err {ISBIG}");
+        return -1;
+    }
+    for (int i = 0; i < size; i++){
+        this->input(str[i]);
+    }
+    return 0;
+}
+
+int Cli::script(char* src, size_t size){
+    int ptr = 0;
+    char* tmp = src;
+    this->clearInputBuffer();
+    if (size > CLI_MAX_SCRIPT_SIZE){
+        this->serial->print(cli::cli_noti);
+        this->serial->println("script err {ISBIG}");
+        return -1;
+    }
+    while (ptr != size){
+        for (int i = ptr; i < size; i++){
+            if (src[i] == '\n'){
+                if(this->in(tmp, i - ptr + 1) != 0){
+                    return -1;
+                }
+                ptr = i + 1;
+                tmp = src + ptr;
+                break;
+            }
+            else if (src[i] == '\0'){
+                return 0;
+            }
+        }
+    }
+    return 0;
 }
 

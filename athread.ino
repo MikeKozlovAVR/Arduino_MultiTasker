@@ -1,14 +1,17 @@
 #include "multitasker.h"
 #include "cli.h"
 
+MultiTasker mtasker;
+Cli cli_ctrl;
+static char report_script[]=
+"get_tasks\n"
+"get_load\n";
+
 void task_func0(Task *task);
 void task_func1(Task *task);
 void task_func2(Task *task);
 void task_func3(Task *task);
 void task_func4(Task *task);
-
-MultiTasker mtasker;
-Cli cli_ctrl;
 
 int tsk_count0 = 0;
 int tsk_count1 = 0;
@@ -21,28 +24,38 @@ void cli_task(Task *task){
   task->yield();
 }
 
-void process_0(CliProcess *cli){
-  cli->setMultiTasker(&mtasker);
-  cli->regTaskPid(mtasker.newTask(task_func1, 15));
-  cli->regTaskPid(mtasker.newTask(task_func2, 62));
+void process_0(CliProcess *process){
+  process->setMultiTasker(&mtasker);
+  process->regTaskPid(mtasker.newTask(task_func0, 15));
+  process->regTaskPid(mtasker.newTask(task_func1, 15));
+  process->regTaskPid(mtasker.newTask(task_func2, 62));
+  process->regTaskPid(mtasker.newTask(task_func3, 62));
+  process->regTaskPid(mtasker.newTask(task_func4, 63));
 }
 
-void process_1(CliProcess *cli){
-  Serial.print("Process load: ");
-  Serial.print(mtasker.getCpuLoad());
-  Serial.println("%");
+void process_1(CliProcess *process){
+  cli_ctrl.out("Process load: ");
+  cli_ctrl.out((int)mtasker.getCpuLoad());
+  cli_ctrl.out("%\n");
 }
 
-void process_2(CliProcess *cli){
-  Serial.print("Active Tasks: ");
-  Serial.println(mtasker.getActiveTaskNum());
+void process_2(CliProcess *process){
+  cli_ctrl.out("Active Tasks: ");
+  cli_ctrl.out((int)mtasker.getActiveTaskNum());
+  cli_ctrl.out("\n");
+}
+
+void report_process(CliProcess *process){
+  cli_ctrl.out("Sys report:\n");
+  cli_ctrl.script(report_script, sizeof(report_script));
 }
 
 void setup() {
   cli_ctrl.init(&Serial, 9600);
   cli_ctrl.regProcess(process_0, "start");
-  cli_ctrl.regProcess(process_1, "get_load");
-  cli_ctrl.regProcess(process_2, "get_tasks");
+  cli_ctrl.regProcess(process_1, "get_load", PROCT_SINGLE);
+  cli_ctrl.regProcess(process_2, "get_tasks", PROCT_SINGLE);
+  cli_ctrl.regProcess(report_process, "report", PROCT_SINGLE);
   mtasker.newTask(cli_task, 64);
   mtasker.runScheduler();
 }
@@ -52,8 +65,9 @@ void loop() {
 }
 
 void task_func0(Task *task){
-  //Serial.println(task->getPid());
-  task->sleep(1000);
+  cli_ctrl.out((int)task->getPid());
+  cli_ctrl.out("\n");
+  task->sleep(500);
   /*tsk_count0++;
   if (tsk_count0 == 3){
     tsk_count0 = 0;
@@ -62,8 +76,8 @@ void task_func0(Task *task){
 }
 
 void task_func1(Task *task){
-  Serial.println(task->getPid());
-  //delay(50);
+  cli_ctrl.out((int)task->getPid());
+  cli_ctrl.out("\n");
   task->sleep(1000);
   /*tsk_count1++;
   if (tsk_count1 == 5){
@@ -73,10 +87,10 @@ void task_func1(Task *task){
 }
 
 void task_func2(Task *task){
-  //delay(50);
-  Serial.println(task->getPid());
-  //mtasker.destroyTaskAtPid(104);
+  cli_ctrl.out((int)task->getPid());
+  cli_ctrl.out("\n");
   task->sleep(2000);
+  //mtasker.destroyTaskAtPid(104);
   //task->yield();
   /*
   tsk_count2++;
@@ -87,22 +101,24 @@ void task_func2(Task *task){
 }
 
 void task_func3(Task *task){
-  Serial.println(task->getPid());
-  //thread3.sleep(50);  
-  task->yield();
+  cli_ctrl.out((int)task->getPid());
+  cli_ctrl.out("\n");
+  task->sleep(3000);  
+  /*task->yield();
   tsk_count3++;
   if (tsk_count3 == 3){
     tsk_count3 = 0;
     task->destroy();
-  }
+  }*/
 }
 
 void task_func4(Task *task){
-  Serial.println(task->getPid());
+  cli_ctrl.out((int)task->getPid());
+  cli_ctrl.out("\n");
   task->sleep(2500);
-  tsk_count4++;
+  /*tsk_count4++;
   if (tsk_count4 == 3){
     tsk_count4 = 0;
     task->destroy();
-  }
+  }*/
 }
