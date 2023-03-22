@@ -7,6 +7,11 @@ static char report_script[]=
 "get_tasks\n"
 "get_load\n";
 
+static char starting_script[]=
+"get_tasks\n"
+"get_load\n"
+"start 5\n";
+
 void task_func0(Task *task);
 void task_func1(Task *task);
 void task_func2(Task *task);
@@ -25,12 +30,28 @@ void cli_task(Task *task){
 }
 
 void process_0(CliProcess *process){
+  int argc = process->getArgC();
+  char **argv = process->getArgV();
+  int tasks_num = 0;
   process->setMultiTasker(&mtasker);
-  process->regTaskPid(mtasker.newTask(task_func0, 15));
-  process->regTaskPid(mtasker.newTask(task_func1, 15));
-  process->regTaskPid(mtasker.newTask(task_func2, 62));
-  process->regTaskPid(mtasker.newTask(task_func3, 62));
-  process->regTaskPid(mtasker.newTask(task_func4, 63));
+  if (argc > 1){
+    tasks_num = atoi(argv[1]);
+  }
+  if (tasks_num > 0){
+    process->regTaskPid(mtasker.newTask(task_func0, 15));
+  }
+  if (tasks_num > 1){
+    process->regTaskPid(mtasker.newTask(task_func1, 15));
+  }
+  if (tasks_num > 2){
+    process->regTaskPid(mtasker.newTask(task_func2, 62));
+  }
+  if (tasks_num > 3){
+    process->regTaskPid(mtasker.newTask(task_func3, 62));
+  }
+  if (tasks_num > 4){
+    process->regTaskPid(mtasker.newTask(task_func4, 63));
+  }
 }
 
 void process_1(CliProcess *process){
@@ -50,12 +71,18 @@ void report_process(CliProcess *process){
   cli_ctrl.script(report_script, sizeof(report_script));
 }
 
+void starting_process(CliProcess *process){
+  cli_ctrl.out("Start script:\n");
+  cli_ctrl.script(starting_script, sizeof(starting_script));
+}
+
 void setup() {
   cli_ctrl.init(&Serial, 9600);
   cli_ctrl.regProcess(process_0, "start");
   cli_ctrl.regProcess(process_1, "get_load", PROCT_SINGLE);
   cli_ctrl.regProcess(process_2, "get_tasks", PROCT_SINGLE);
   cli_ctrl.regProcess(report_process, "report", PROCT_SINGLE);
+  cli_ctrl.regProcess(starting_process, "go", PROCT_SINGLE);
   mtasker.newTask(cli_task, 64);
   mtasker.runScheduler();
 }

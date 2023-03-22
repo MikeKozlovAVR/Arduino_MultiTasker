@@ -8,6 +8,7 @@
 #define CLI_MAX_BUFF_SIZE 32
 #define CLI_MAX_PROCESSES 12
 #define CLI_MAX_SCRIPT_SIZE 256
+#define CLI_MAX_PROCESS_ARGV 16
 
 typedef struct _inbuff{
     char  buff[CLI_MAX_BUFF_SIZE];
@@ -31,19 +32,25 @@ typedef struct _process_unit{
 class Cli{
   public:
     Cli();
+    //Initialization HardwareSerial and print CLI info
     void init(HardwareSerial *serial, unsigned long baud);
+    //Register a process in a CLI
     int  regProcess(void(*process_f)(CliProcess *process), const char* name, process_type_t type = PROCT_CONTINUOUS);
+    //Check HardwareSerial is available and processes the input data
     void cliSerialEvent();
+    //Send output data throw HardwareSerial
     size_t out(char* src);
     size_t out(int src);
     size_t out(float src);
     size_t out(float src, uint8_t dec_places);
+    //Processing input data
     int    in(char* str, size_t size);
+    //Run the script
     int    script(char* src, size_t size);
   private:
     int input(char in);
     int inputProcessing();
-    int startProcess(char *proc_name);
+    int startProcess(char *proc_name, int argc, char **argv);
     int slayProcess(char *proc_name);
     void startProcess(process_unit_t *proc_unit);
     void slayProcess(process_unit_t *proc_unit);

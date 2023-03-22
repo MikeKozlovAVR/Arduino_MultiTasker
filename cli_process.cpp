@@ -36,3 +36,16 @@ int CliProcess::destroyRegisteredTasks(){
 CliProcess::~CliProcess(){
     this->destroyRegisteredTasks();
 }
+
+int CliProcess::getArgC(){
+    return this->argc;
+}
+
+char **CliProcess::getArgV(){
+    return this->argv;
+}
+
+void CliProcess::setArg(int argc, char **argv){
+    this->argc = argc;
+    this->argv = argv;
+}
