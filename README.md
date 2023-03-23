@@ -1,7 +1,7 @@
 # Arduino_MultiTasker
 A simple solution for emulating multitasking in Arduino systems. Is not a full-fledged operating system (there is no context switching), but it allows you to arrange different tasks as separate functions, set their priority, perform these tasks once or cyclically, thereby emulating the parallel execution.
 ---
-## Classes discription
+## Classes description
 ### class Task
 Objects of this class provide the functionality necessary to control the executable tasks.
 They store information about the status of the task, its PID, a pointer to a function that is executed as a separate task.
