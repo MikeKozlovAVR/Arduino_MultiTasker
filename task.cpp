@@ -27,6 +27,14 @@ uint8_t Task::getPriority(){
     return this->priority;
 }
 
+int Task::changePriority(uint8_t priority){
+    if (priority > MAX_TASK_PRIORITY || priority == 0){
+        return -1;
+    }
+    this->setPriority(priority);
+    return 0;
+}
+
 void Task::setType(task_type_t type){
     this->type = type;
 }
@@ -63,6 +71,10 @@ void Task::yield(){
 
 void Task::destroy(){
     this->setStatus(DESTROY);
+}
+
+void Task::blocking(){
+    this->setStatus(BLOCKED);
 }
 
 unsigned long Task::getSleepMillis(){

@@ -40,9 +40,11 @@ class Cli{
     void cliSerialEvent();
     //Send output data throw HardwareSerial
     size_t out(char* src);
+    size_t out(char src);
     size_t out(int src);
     size_t out(float src);
     size_t out(float src, uint8_t dec_places);
+    void outln();
     //Processing input data
     int    in(char* str, size_t size);
     //Run the script

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <Arduino.h>
 
+#define MAX_TASK_PRIORITY 64
+
 typedef enum _task_status{
     NONE,
     READY,
@@ -39,7 +41,9 @@ class Task{
     void sleep(uint16_t period_ms);
     void yield();
     void destroy();
+    void blocking();
     pid_t getPid();
+    int changePriority(uint8_t priority);
   private:
     Task(void(*task_f)(Task *task));
     int setThreadFunc(void(*task_f)(Task *task));

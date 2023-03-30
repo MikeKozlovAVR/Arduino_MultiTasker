@@ -17,6 +17,7 @@ void task_func1(Task *task);
 void task_func2(Task *task);
 void task_func3(Task *task);
 void task_func4(Task *task);
+void task_cpu_load(Task *task);
 
 int tsk_count0 = 0;
 int tsk_count1 = 0;
@@ -55,25 +56,33 @@ void process_0(CliProcess *process){
 }
 
 void process_1(CliProcess *process){
-  cli_ctrl.out("Process load: ");
+  cli_ctrl.out("CPU load: ");
   cli_ctrl.out((int)mtasker.getCpuLoad());
-  cli_ctrl.out("%\n\r");
+  cli_ctrl.out("%");
+  cli_ctrl.outln();
 }
 
 void process_2(CliProcess *process){
   cli_ctrl.out("Active Tasks: ");
   cli_ctrl.out((int)mtasker.getActiveTaskNum());
-  cli_ctrl.out("\n\r");
+  cli_ctrl.outln();
 }
 
 void report_process(CliProcess *process){
-  cli_ctrl.out("Sys report:\n\r");
+  cli_ctrl.out("Sys report:");
+  cli_ctrl.outln();
   cli_ctrl.script(report_script, sizeof(report_script));
 }
 
 void starting_process(CliProcess *process){
-  cli_ctrl.out("Start script:\n\r");
+  cli_ctrl.out("Start script:");
+  cli_ctrl.outln();
   cli_ctrl.script(starting_script, sizeof(starting_script));
+}
+
+void cpu_load_process(CliProcess *process){
+  process->setMultiTasker(&mtasker);
+  process->regTaskPid(mtasker.newTask(task_cpu_load, 10));
 }
 
 void setup() {
@@ -83,6 +92,7 @@ void setup() {
   cli_ctrl.regProcess(process_2, "get_tasks", PROCT_SINGLE);
   cli_ctrl.regProcess(report_process, "report", PROCT_SINGLE);
   cli_ctrl.regProcess(starting_process, "go", PROCT_SINGLE);
+  cli_ctrl.regProcess(cpu_load_process, "loads");
   mtasker.newTask(cli_task, 64);
   mtasker.runScheduler();
 }
@@ -93,7 +103,8 @@ void loop() {
 
 void task_func0(Task *task){
   cli_ctrl.out((int)task->getPid());
-  cli_ctrl.out("\n\r");
+  cli_ctrl.outln();
+  delay(100);
   task->sleep(500);
   /*tsk_count0++;
   if (tsk_count0 == 3){
@@ -104,7 +115,8 @@ void task_func0(Task *task){
 
 void task_func1(Task *task){
   cli_ctrl.out((int)task->getPid());
-  cli_ctrl.out("\n\r");
+  cli_ctrl.outln();
+  delay(100);
   task->sleep(1000);
   /*tsk_count1++;
   if (tsk_count1 == 5){
@@ -115,7 +127,8 @@ void task_func1(Task *task){
 
 void task_func2(Task *task){
   cli_ctrl.out((int)task->getPid());
-  cli_ctrl.out("\n\r");
+  cli_ctrl.outln();
+  delay(100);
   task->sleep(2000);
   //mtasker.destroyTaskAtPid(104);
   //task->yield();
@@ -129,7 +142,8 @@ void task_func2(Task *task){
 
 void task_func3(Task *task){
   cli_ctrl.out((int)task->getPid());
-  cli_ctrl.out("\n\r");
+  cli_ctrl.outln();
+  delay(100);
   task->sleep(3000);  
   /*task->yield();
   tsk_count3++;
@@ -141,11 +155,20 @@ void task_func3(Task *task){
 
 void task_func4(Task *task){
   cli_ctrl.out((int)task->getPid());
-  cli_ctrl.out("\n\r");
+  cli_ctrl.outln();
+  delay(100);
   task->sleep(2500);
   /*tsk_count4++;
   if (tsk_count4 == 3){
     tsk_count4 = 0;
     task->destroy();
   }*/
+}
+
+void task_cpu_load(Task *task){
+  cli_ctrl.out("CPU load: ");
+  cli_ctrl.out((int)mtasker.getCpuLoad());
+  cli_ctrl.out("%");
+  cli_ctrl.outln();
+  task->sleep(500);
 }

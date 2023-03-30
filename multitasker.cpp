@@ -2,6 +2,7 @@
 
 
 MultiTasker::MultiTasker(){
+    memset(&this->stat, 0, sizeof(this->stat));
     this->free_task = new Task(NULL);
     this->free_task->setPriority(0);
     this->free_task->setStatus(NONE);
@@ -12,14 +13,11 @@ MultiTasker::MultiTasker(){
 }
 
 int MultiTasker::newTask(void(*task_f)(Task *task), uint8_t priority, task_type_t type = LOOP){
-    if (priorityCheck(priority) != 0){
-        return -1;
-    }
-    if (task_f == NULL){
-        return -1;
-    }
     Task *task = new Task(task_f);
-    task->setPriority(priority);
+    if (task->changePriority(priority) != 0 || task_f == NULL){
+        delete(task);
+        return -1;
+    }
     task->setType(type);
     task->setStatus(READY);
     task->setPid(this->getFreePid());
@@ -29,13 +27,6 @@ int MultiTasker::newTask(void(*task_f)(Task *task), uint8_t priority, task_type_
     }
     this->sortTaskPriorities();
     return task->getPid();
-}
-
-int MultiTasker::priorityCheck(uint8_t priority){
-    if (priority > MAX_TASK_PRIORITY || priority == 0){
-        return -1;
-    }
-    return 0;
 }
 
 pid_t MultiTasker::getFreePid(){
@@ -87,7 +78,6 @@ void MultiTasker::sortTaskPriorities(){
 
 void MultiTasker::destroyTask(Task *task){
     delete(task);
-    //task = NULL;
 }
 
 int MultiTasker::destroyTaskAtPid(pid_t pid){
@@ -100,12 +90,28 @@ int MultiTasker::destroyTaskAtPid(pid_t pid){
     return -1;
 }
 
+int MultiTasker::unblockTaskAtPid(pid_t pid){
+    for (int i=0; i<MAX_TASK_NUM; i++){
+        if (this->tasks[i]->getPid() == pid){
+            this->tasks[i]->setStatus(READY);
+            return 0;
+        }
+    }
+    return -1;
+}
+
 void MultiTasker::measureCpuLoadTime(){
     uint64_t current_millis = millis();
     if (current_millis - this->stat.load_time_prev_millis >= CPU_LOAD_MEAS_INTERVAL){
-        uint8_t load = (uint8_t)(((float)this->stat.idle_millis / CPU_LOAD_MEAS_INTERVAL)*100);
-        if (load > 100) { load = 100;}
-        this->stat.cpu_load = 100 - load;
+        uint16_t load = (uint16_t)(((float)this->stat.idle_millis / CPU_LOAD_MEAS_INTERVAL)*1000);
+        if (load > 1000) { load = 1000;}
+        this->stat.cpu_load_avg += 1000 - load;
+        this->stat.cpu_load_avg_count++;
+        if (this->stat.cpu_load_avg_count == CPU_LOAD_AVG_COUNT){
+            this->stat.cpu_load = (this->stat.cpu_load_avg / CPU_LOAD_AVG_COUNT) / 10;
+            this->stat.cpu_load_avg = 0;
+            this->stat.cpu_load_avg_count = 0;
+        }
         this->stat.idle_millis = 0;
         this->stat.load_time_prev_millis = current_millis;
     }
