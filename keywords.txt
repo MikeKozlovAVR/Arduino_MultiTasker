@@ -1,0 +1,36 @@
+#######################################
+# Syntax Coloring Map For MultiTasker
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+MultiTasker	KEYWORD1
+Task	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+newTask	KEYWORD2
+runSheduler	KEYWORD2
+destroyTaskAtPid	KEYWORD2
+unblockTaskAtPid	KEYWORD2
+getCpuLoad	KEYWORD2
+getActiveTaskNum	KEYWORD2
+sleep	KEYWORD2
+yield	KEYWORD2
+destroy	KEYWORD2
+blocking	KEYWORD2
+getPid	KEYWORD2
+changePriority	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
